@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoGameLibrary.Audio;
 using MonoGameLibrary.Input;
 
 namespace MonoGameLibrary;
@@ -45,6 +46,11 @@ public class Core : Game
 
 
     public static bool ExitOnEscape { get; set; }
+
+    /// <summary>
+    /// Gets a reference to the auto control system
+    /// </summary>
+    public static AudioController Audio {get;private set;}
 
     /// <summary>
     /// Creates a new Core instance.
@@ -101,12 +107,20 @@ public class Core : Game
         // Create the sprite batch instance
         SpriteBatch = new SpriteBatch(GraphicsDevice);
 
+        // Create a new InputManager
         Input = new InputManager();
+
+        // Create a new audio controller
+        Audio = new AudioController();
     }
 
     protected override void Update(GameTime gameTime)
     {
+        // Update the input manager
         Input.Update(gameTime);
+
+        // Update the audio controller
+        Audio.Update();
 
         if (ExitOnEscape && Input.Keyboard.IsKeyDown(Keys.Escape))
         {
