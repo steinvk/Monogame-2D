@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGameLibrary.Audio;
 using MonoGameLibrary.Input;
+using MonoGameLibrary.Scenes;
 
 namespace MonoGameLibrary;
 
@@ -17,6 +18,12 @@ public class Core : Game
     /// Gets a reference to the Core instance
     /// </summary>
     public static Core Instance => s_instance;
+
+    // THe scene that is currently active
+    private static Scene s_activeScene;
+
+    // the next scene to switch to, If there is one
+    private static Scene s_nextScene;
 
     /// <summary>
     /// Gets the graphics device manager to control the presentation of graphics
@@ -114,6 +121,13 @@ public class Core : Game
         Audio = new AudioController();
     }
 
+    protected override void UnloadContent()
+    {
+        Audio.Dispose();
+
+        base.UnloadContent();
+    }
+
     protected override void Update(GameTime gameTime)
     {
         // Update the input manager
@@ -122,12 +136,69 @@ public class Core : Game
         // Update the audio controller
         Audio.Update();
 
-        if (ExitOnEscape && Input.Keyboard.IsKeyDown(Keys.Escape))
+        if (ExitOnEscape && Input.Keyboard.WasKeyJustPressed(Keys.Escape))
         {
             Exit();
+        }
+
+        // if there is a next scene waiting to be switch to, then transition to that scene
+        if(s_nextScene != null)
+        {
+            TransitionScene();
+        }
+
+        // If there is an active scene, update it.
+        if(s_activeScene != null)
+        {
+            s_activeScene.Update(gameTime);
         }
         
         base.Update(gameTime);
     }
+
+    protected override void Draw(GameTime gameTime)
+    {
+        // If there is an active scene, draw it
+        if(s_activeScene != null)
+        {
+            s_activeScene.Draw(gameTime);
+        }
+        base.Draw(gameTime);
+    }
+
+    public static void ChangeScene(Scene next)
+    {
+        if(s_activeScene != next)
+        {
+            s_nextScene = next;
+        }
+    }
+
+    private static void TransitionScene()
+    {
+        // if there is an active scene, dispose of it
+        if(s_activeScene != null)
+        {
+            s_activeScene.Dispose();
+        }
+
+        // Force the garbage collector to collect to ensure memory is cleared
+        GC.Collect();
+
+        // Change the current active scene to the new scene
+        s_activeScene = s_nextScene;
+
+        // Null out the next scene value so it does not trigger a change over and over
+        s_nextScene = null;
+
+        // If the active scene now is not null, initialize if.
+        // Rememberm just like with GAme, the Initialize call also calls the Scene.LoadContent
+        if(s_activeScene != null)
+        {
+            s_activeScene.Initialize();
+        }
+    }
+
+    
 
 }
