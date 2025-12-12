@@ -1,7 +1,14 @@
+using System;
+using DungeonSlime.UI;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoGameGum;
+using Gum.Forms.Controls;
+using MonoGameGum.GueDeriving;
 using MonoGameLibrary;
+using MonoGameLibrary.Graphics;
 using MonoGameLibrary.Scenes;
 
 namespace DungeonSlime.Scenes;
@@ -48,6 +55,177 @@ public class TitleScene : Scene
     // The speed that the background pattern scrolls
     private float _scrollSpeed = 50.0f;
 
+    private SoundEffect _uiSoundEffect;
+    private Panel _titleScreenButtonsPanel;
+    private Panel _optionsPanel;
+    private AnimatedButton _optionButton;
+    private AnimatedButton _optionBackButton;
+
+    // Reference to the texture atlas that we can pass to UI elements when they
+    // are created
+    private TextureAtlas _atlas;
+
+
+    private void CreateTitlePanel()
+    {
+        // create a container to hold all of our buttons
+        _titleScreenButtonsPanel = new Panel();
+        _titleScreenButtonsPanel.Dock(Gum.Wireframe.Dock.Fill);
+        _titleScreenButtonsPanel.AddToRoot();
+
+        var startButton = new AnimatedButton(_atlas);
+        startButton.Anchor(Gum.Wireframe.Anchor.BottomLeft);
+        startButton.Visual.X = 50;
+        startButton.Visual.Y = -12;
+        startButton.Width = 70;
+        startButton.Text = "Start";
+        startButton.Click += HandleStartClicked;
+        _titleScreenButtonsPanel.AddChild(startButton);
+
+        _optionButton = new AnimatedButton(_atlas);
+        _optionButton.Anchor(Gum.Wireframe.Anchor.BottomRight);
+        _optionButton.Visual.X = -50;
+        _optionButton.Visual.Y = -12;
+        _optionButton.Width = 70;
+        _optionButton.Text = "Options";
+        _optionButton.Click += HandleOptionsClicked;
+        _titleScreenButtonsPanel.AddChild(_optionButton);
+
+        startButton.IsFocused = true;
+    }
+
+    private void HandleStartClicked(object sender, EventArgs e)
+    {
+        // A Ui interaction occured, play the sound effect
+        Core.Audio.PlaySoundEffect(_uiSoundEffect);
+
+        // Change the game scene to start the game
+        Core.ChangeScene(new GameScene());
+    }
+
+    private void HandleOptionsClicked(object sender, EventArgs e)
+    {
+        // A Ui interaction occured, play the sound effect
+        Core.Audio.PlaySoundEffect(_uiSoundEffect);
+
+        // Set the title panel to be invisible
+        _titleScreenButtonsPanel.IsVisible = false;
+
+        // set the options panel to be visible
+        _optionsPanel.IsVisible = true;
+
+        // Give the back button on the options panel focus
+        _optionBackButton.IsFocused = true;
+    }
+
+    private void CreateOptionsPanel()
+    {
+        _optionsPanel = new Panel();
+        _optionsPanel.Dock(Gum.Wireframe.Dock.Fill);
+        _optionsPanel.IsVisible = false;
+        _optionsPanel.AddToRoot();
+
+
+        TextRuntime optionsText = new TextRuntime();
+        optionsText.X = 10;
+        optionsText.Y = 10;
+        optionsText.Text = "OPTIONS";
+        optionsText.UseCustomFont = true;
+        optionsText.FontScale = 0.5f;
+        optionsText.CustomFontFile = @"fonts/04b_30.fnt";
+        _optionsPanel.AddChild(optionsText);
+
+        var musicSlider = new OptionsSlider(_atlas);
+        musicSlider.Name = "MusicSlider";
+        musicSlider.Text = "MUSIC";
+        musicSlider.Anchor(Gum.Wireframe.Anchor.Top);
+        musicSlider.Visual.Y = 30f;
+        musicSlider.Minimum = 0;
+        musicSlider.Maximum = 1;
+        musicSlider.Value = Core.Audio.SongVolume;
+        musicSlider.SmallChange = .1;
+        musicSlider.LargeChange = .2;
+        musicSlider.ValueChanged += HandleMusicSliderValueChanged;
+        musicSlider.ValueChangeCompleted += HandleMusicSliderValueChangeCompleted;
+        _optionsPanel.AddChild(musicSlider);
+
+        var sfxSlider = new OptionsSlider(_atlas);
+        sfxSlider.Name = "SfxSlider";
+        sfxSlider.Text = "SFX";
+        sfxSlider.Anchor(Gum.Wireframe.Anchor.Top);
+        sfxSlider.Visual.Y = 93;
+        sfxSlider.Minimum = 0;
+        sfxSlider.Maximum = 1;
+        sfxSlider.Value = Core.Audio.SoundEffectVolume;
+        sfxSlider.SmallChange = .1;
+        sfxSlider.LargeChange = .2;
+        sfxSlider.ValueChanged += HandleSfxSliderChanged;
+        sfxSlider.ValueChangeCompleted += HandleSfxSliderChangeCompleted;
+        _optionsPanel.AddChild(sfxSlider);
+
+        _optionBackButton = new AnimatedButton(_atlas);
+        _optionBackButton.Text = "BACK";
+        _optionBackButton.Anchor(Gum.Wireframe.Anchor.BottomRight);
+        _optionBackButton.X = -28f;
+        _optionBackButton.Y = -10f;
+        _optionBackButton.Click += HandleOptionsButtonBack;
+        _optionsPanel.AddChild(_optionBackButton);
+    }
+
+    private void HandleSfxSliderChanged(object sender, EventArgs e)
+    {
+        // Get a reference to the sender as a Slider
+        var slider = (Slider)sender;
+
+        // Set the global sound effect volume to the value of the slider
+        Core.Audio.SoundEffectVolume = (float)slider.Value;
+    }
+
+    private void HandleSfxSliderChangeCompleted(object sender, EventArgs e)
+    {
+        // Play the Ui effect so the player can hear the difference in audio
+        Core.Audio.PlaySoundEffect(_uiSoundEffect);
+    }
+
+    private void HandleMusicSliderValueChanged(object sender, EventArgs e)
+    {
+        // Get a reference to the sender as slider
+        var slider = (Slider)sender;
+
+        // Set the global song volume to the value of the slider
+        Core.Audio.SongVolume = (float)slider.Value;
+    }
+
+    private void HandleMusicSliderValueChangeCompleted(object sender, EventArgs e)
+    {
+        // A UI interaction occured, play the sound effect
+        Core.Audio.PlaySoundEffect(_uiSoundEffect);
+    }
+
+    private void HandleOptionsButtonBack(object sender, EventArgs e)
+    {
+        // A UI interaction occured, play the sound effect
+        Core.Audio.PlaySoundEffect(_uiSoundEffect);
+
+        // set the title panel to be visible
+        _titleScreenButtonsPanel.IsVisible = true;
+
+        // set the option banel to be invisible
+        _optionsPanel.IsVisible = false;
+
+        _optionButton.IsFocused = true;
+    }
+
+    private void InitializeUI()
+    {
+        // Clear out any previous UI in case we came here from
+        // a different screen
+        GumService.Default.Root.Children.Clear();
+
+        CreateTitlePanel();
+        CreateOptionsPanel();
+    }
+
     public override void Initialize()
     {
         base.Initialize();
@@ -74,6 +252,8 @@ public class TitleScene : Scene
 
         // Set the background pattern destination rectangle to fill the entire screen background
         _backgroundDestination = Core.GraphicsDevice.PresentationParameters.Bounds;
+
+        InitializeUI();
     }
 
     public override void LoadContent()
@@ -86,6 +266,12 @@ public class TitleScene : Scene
 
         // Load the background pattern texture
         _backgroundPattern = Content.Load<Texture2D>("images/background-pattern");
+
+        // Load the sound effect to play when ui action occur
+        _uiSoundEffect = Core.Content.Load<SoundEffect>("audio/ui");
+
+        // Load the texture atlas from the xml configuration file
+        _atlas = TextureAtlas.FromFile(Core.Content, "images/atlas-definition.xml");
     }
 
     public override void Update(GameTime gameTime)
@@ -105,6 +291,8 @@ public class TitleScene : Scene
         // a seamless wrap
         _backgroundOffset.X %= _backgroundPattern.Width;
         _backgroundOffset.Y %= _backgroundPattern.Height;
+
+        GumService.Default.Update(gameTime);
     }
 
     public override void Draw(GameTime gameTime)
@@ -117,34 +305,35 @@ public class TitleScene : Scene
                         _backgroundDestination.Size), Color.White * 0.5f);
         Core.SpriteBatch.End();
 
-        Core.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        if (_titleScreenButtonsPanel.IsVisible)
+        {
+            
+            Core.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
-        // The color to use for the drop shadow text
-        Color dropShadowColor = Color.Black * 0.5f;
+            // The color to use for the drop shadow text
+            Color dropShadowColor = Color.Black * 0.5f;
 
-        // Draw the dungeon text slightly offset from it's original position and with a transparent color
-        // to give it a drop shadow
-        Core.SpriteBatch.DrawString(_font5x, DUNGEON_TEXT, _dungeonTextPos + new Vector2(10,10), dropShadowColor, 
+            // Draw the dungeon text slightly offset from it's original position and with a transparent color
+            // to give it a drop shadow
+            Core.SpriteBatch.DrawString(_font5x, DUNGEON_TEXT, _dungeonTextPos + new Vector2(10,10), dropShadowColor, 
                                         0.0f, _dungeonTextOrigin, 1.0f, SpriteEffects.None, 1.0f);
         
-        // Draw the Dungeon text on top of that at its original position
-        Core.SpriteBatch.DrawString(_font5x, DUNGEON_TEXT, _dungeonTextPos, Color.White, 0.0f, 
+            // Draw the Dungeon text on top of that at its original position
+            Core.SpriteBatch.DrawString(_font5x, DUNGEON_TEXT, _dungeonTextPos, Color.White, 0.0f, 
                                         _dungeonTextOrigin, 1.0f, SpriteEffects.None, 1.0f);
 
-        // Draw the Slime text slightly offset from it is original position and
-        // with a transparent color to give it a drop shadow.
-        Core.SpriteBatch.DrawString(_font5x, SLIME_TEXT, _slimeTextPos + new Vector2(10, 10), dropShadowColor, 
+            // Draw the Slime text slightly offset from it is original position and
+            // with a transparent color to give it a drop shadow.
+            Core.SpriteBatch.DrawString(_font5x, SLIME_TEXT, _slimeTextPos + new Vector2(10, 10), dropShadowColor, 
                                         0.0f, _slimeTextOrigin, 1.0f, SpriteEffects.None, 1.0f);
 
-        // Draw the Slime text on top of that at its original position.
-        Core.SpriteBatch.DrawString(_font5x, SLIME_TEXT, _slimeTextPos, Color.White, 0.0f, 
+            // Draw the Slime text on top of that at its original position.
+            Core.SpriteBatch.DrawString(_font5x, SLIME_TEXT, _slimeTextPos, Color.White, 0.0f, 
                                         _slimeTextOrigin, 1.0f, SpriteEffects.None, 1.0f);
-
-        // Draw the press enter text.
-        Core.SpriteBatch.DrawString(_font, PRESS_ENTER_TEXT, _pressEnterPos, Color.White, 0.0f, 
-                                        _pressEnterOrigin, 1.0f, SpriteEffects.None, 0.0f);
         
-        Core.SpriteBatch.End();
-    }
+            Core.SpriteBatch.End();
+        }
 
+        GumService.Default.Draw();    
+    }
 }
