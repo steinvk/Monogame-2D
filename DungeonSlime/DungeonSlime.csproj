@@ -32,5 +32,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Content/bin/DesktopGL/Content/" />
+    <Folder Include="GameObjects/" />
   </ItemGroup>
 </Project>
